@@ -1,3 +1,5 @@
+# -*- coding:utf-8 -*-
+
 import time
 import logging
 from celery_app import app
@@ -18,6 +20,10 @@ import random
 # 5.1 乱序显示，架构改变 yes
 # 6.写好定时爬虫，推上服务器
 # 7.写celery教程，发布初版的应用。
+
+#7.8
+# 9.重构类，将复用模块全部整出类来
+# 10.
 
 log = log_config.Logger(logger="monitor")
 

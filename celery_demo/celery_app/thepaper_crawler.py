@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 import re
 import time
 import requests
@@ -7,27 +8,27 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from celery_app import app
 from pymongo import MongoClient
-from . import log_config
 from fake_useragent import UserAgent
+from . import log_config
+from . import tools
 
-# Split Chinese.
+# Split chinese.
 pattern_cn = re.compile("[\u4e00-\u9fa5]+")
 
-# Loading Logger.
+# Load logger.
 log = log_config.Logger(logger="crawl1")
 
-# Loading Table.
-table_url = pd.read_excel("thepaper_url_table.xlsx")
+# Import request module
+r = tools.Request_module()
 
-def requests_page(url):
-    ua = UserAgent()
-    headers = {"User-Agent":ua.random}
-    response_text = requests.get(url,headers = headers).text
-    response_soup = BeautifulSoup(response_text,'lxml')
-    return response_soup
+# Import Mongod module
+mongod = tools.Mongod()
+
+# Load table
+table_url = pd.read_excel("celery_app/thepaper_url_table.xlsx")
 
 def extract_page(url):
-    response_soup = requests_page(url)
+    response_soup = r.request_get(url)
     all_news = response_soup.find('div',class_ = "newsbox").find_all("h2")
     all_news_title = list(map(lambda x:x.find("a").get_text(),all_news))
     all_news_hrefs = list(map(lambda x:x.find("a").get("href"),all_news))
@@ -42,20 +43,6 @@ def extract_page(url):
         "recommand":recommand,"comments_num":comments_num,"record_time":datetime.datetime.now(),"media":"澎湃"}
         list_post.append(post)
     return list_post
-
-def run_requests():
-    list_total = []
-    index = 0
-    for url in table_url["comp_url"][0:10]:
-        try:
-            list_post = extract_page(url)
-        except Exception as e:
-            pass
-        list_total.extend(list_post)
-        index += 1
-        if index % 10 == 0:
-            time.sleep(3)
-    return list_total
 
 def status_split(status_text):
 	status_li = status_text.split("\n")
@@ -79,29 +66,8 @@ def status_split(status_text):
 
 @app.task
 def crawl():
-	#Create an mongodb API
-	myclient = MongoClient('localhost', 27017)
-	mydb = myclient["thepaper"]
-	mycol = mydb["all_title"]
+	myclient,mydb,mycol = mongod.get_mongod()
 
-	post_list = run_requests()
-	# 显示规则部分
-	for post in post_list:
-		#drop duplicates
-		try:
-			if not mycol.find_one({"title":post["title"]}):
-				#log.error("succeeded")
-				post_id = mycol.insert_one(post).inserted_id
-			else:
-				#log.error("failed")
-				pass
+	post_list = r.iter_page()
 
-		except Exception as e:
-			log.error("存储出现错误")
-			pass
-
-			#if post["title"] != mycol.find_one({"title":post["title"]})["title"]:
-			#post_id = mycol.insert_one(post).inserted_id
-			#else:
-			#print("save failed")
-			#pass
+	mongod.save_mongod()

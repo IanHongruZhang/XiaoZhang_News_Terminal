@@ -32,19 +32,6 @@ class Logger(object):
 
         self.logger.addHandler(ch)
 
-        # 在文件中输出(如果有必要的话，要改colorama)
-        """
-        rq = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time()))
-        log_path = os.getcwd() + "/logs/"
-        log_name = log_path + rq + ".log"
-        fh = logging.FileHandler(log_name)
-        fh.setLevel(logging.DEBUG)
-        fh.setFormatter(formatter)
-        """
-
-        # 文件输出        
-        #self.logger.addHandler(fh)文件输出
-
     def debug(self,msg):
         self.logger.debug(Style.BRIGHT + "[一般] - " + str(msg) + Style.RESET_ALL)
 
@@ -83,3 +70,15 @@ class Logger(object):
 
 #formatter = logging.Formatter("%(asctime)s - %(filename)s[line:%(lineno)d] - %(name)s - %(message)s")
 
+# 在文件中输出(如果有必要的话，要改colorama)
+"""
+rq = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time()))
+log_path = os.getcwd() + "/logs/"
+log_name = log_path + rq + ".log"
+fh = logging.FileHandler(log_name)
+fh.setLevel(logging.DEBUG)
+fh.setFormatter(formatter)
+"""
+
+# 文件输出        
+#self.logger.addHandler(fh)文件输出

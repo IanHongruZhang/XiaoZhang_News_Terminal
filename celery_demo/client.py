@@ -5,13 +5,13 @@ from celery_app import monitor
 URL_BASH_1 = "https://www.thepaper.cn/"
 URL_BASH_2 = "https://www.jiemian.com/"
 
-def manage_crawl_task(url1,url2):
-	thepaper_crawler.crawl.apply_async(args=(url1,))
-	jiemian_crawler.crawl.apply_async(args=(url2,))
+def manage_crawl_task():
+	thepaper_crawler.crawl.apply_async(args=())
+	jiemian_crawler.crawl.apply_async(args=())
 	monitor.output.apply_async(args=(),countdown=10)
 
 if __name__ == '__main__':
-	manage_crawl_task(URL_BASH_1,URL_BASH_2)
+	manage_crawl_task()
 
 """
 	for item in mycol.find().sort("record_time",-1):

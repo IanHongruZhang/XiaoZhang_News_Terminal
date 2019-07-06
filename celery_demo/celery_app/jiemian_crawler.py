@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 import re
 import time
 import requests
@@ -9,22 +10,22 @@ from celery_app import app
 from pymongo import MongoClient
 from fake_useragent import UserAgent
 from . import log_config
+from . import tools
 
 # Loading Logger.
 log = log_config.Logger(logger="crawl2")
 
+# Import request module
+r = tools.Request_module()
+
+# Import Mongod module
+mongod = tools.Mongod()
+
 # Loading Table.
 table_url = pd.read_excel("celery_app/jiemian_url_table.xlsx")
 
-def requests_page(url):
-    ua = UserAgent()
-    headers = {"User-Agent": ua.random}
-    response_text = requests.get(url, headers=headers).text
-    response_soup = BeautifulSoup(response_text, 'lxml')
-    return response_soup
-
 def extract_page(url):
-    response_soup = requests_page(url)
+    response_soup = r.request_get(url)
     all_tops = response_soup.find("div", class_="news-list")
     all_hrefs = all_tops.find_all("a", {"target": "_blank"})
     article_hrefs = list(filter(lambda x: "article" in x.get("href"), all_hrefs))
@@ -56,6 +57,26 @@ def extract_page(url):
         list_post.append(post)
     return list_post
 
+@app.task
+def crawl():
+    #Create an mongodb API
+    myclient,mydb,mycol = mongod.get_mongod()
+
+    #post_list = run_requests()
+    post_list = r.iter_page()
+
+
+    mongod.save_mongod()
+
+
+"""
+def requests_page(url):
+    ua = UserAgent()
+    headers = {"User-Agent": ua.random}
+    response_text = requests.get(url, headers=headers).text
+    response_soup = BeautifulSoup(response_text, 'lxml')
+    return response_soup
+
 def run_requests():
     list_total = []
     index = 0
@@ -69,24 +90,4 @@ def run_requests():
         if index % 10 == 0:
             time.sleep(3)
     return list_total
-
-@app.task
-def crawl():
-    #Create an mongodb API
-    myclient = MongoClient('localhost', 27017)
-    mydb = myclient["thepaper"]
-    mycol = mydb["all_title"]
-
-    post_list = run_requests()
-    for post in post_list:
-        # drop duplicates
-        try:
-            if not mycol.find_one({"title": post["title"]}):
-                # log.error("succeeded")
-                mycol.insert_one(post).inserted_id
-            else:
-                # log.error("failed")
-                pass
-        except Exception as e:
-            log.error("存储出现错误")
-            pass
+"""
